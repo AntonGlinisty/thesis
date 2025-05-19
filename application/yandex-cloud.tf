@@ -5,7 +5,7 @@ locals {
   port            = 8080
 }
 
-// vpc
+# vpc
 resource "yandex_vpc_network" "my_vpc" {
   name = "my-vpc"
 }
@@ -26,7 +26,7 @@ resource "yandex_vpc_subnet" "my_backend_subnet" {
   v4_cidr_blocks = ["10.10.2.0/24"]
 }
 
-// frontend vm
+# frontend vm
 resource "yandex_compute_instance" "my_frontend_vm" {
   name        = "my-frontend-vm"
   platform_id = local.platform_id
@@ -49,10 +49,10 @@ resource "yandex_compute_instance" "my_frontend_vm" {
   }
 }
 
-// backend vm
-resource "yandex_compute_instance" "my_backend_vm" {
+# backend vms
+resource "yandex_compute_instance" "my_backend_vms" {
   count       = 3
-  name        = "my-backend-vm-${count.index}"
+  name        = "my-backend-vms-${count.index}"
   platform_id = local.platform_id
   zone        = local.zone
 
@@ -73,7 +73,7 @@ resource "yandex_compute_instance" "my_backend_vm" {
   }
 }
 
-// db vm
+# db vm
 resource "yandex_compute_instance" "my_db_vm" {
   name        = "my-db-vm"
   platform_id = local.platform_id
@@ -96,12 +96,12 @@ resource "yandex_compute_instance" "my_db_vm" {
   }
 }
 
-// target group
+# target group
 resource "yandex_alb_target_group" "my_target_group" {
   name = "my-target-group"
 
   dynamic "target" {
-    for_each = yandex_compute_instance.my_backend_vm[*]
+    for_each = yandex_compute_instance.my_backend_vms[*]
     content {
       subnet_id  = yandex_vpc_subnet.my_backend_subnet.id
       ip_address = target.value.network_interface[0].ip_address
@@ -109,7 +109,7 @@ resource "yandex_alb_target_group" "my_target_group" {
   }
 }
 
-// backend group
+# backend group
 resource "yandex_alb_backend_group" "my_backend_group" {
   name = "my-backend-group"
 
@@ -130,12 +130,12 @@ resource "yandex_alb_backend_group" "my_backend_group" {
   }
 }
 
-// http router
+# http router
 resource "yandex_alb_http_router" "my_http_router" {
   name = "my-http-router"
 }
 
-// virtual host
+# virtual host
 resource "yandex_alb_virtual_host" "my_virtual_host" {
   name           = "my-virtual-host"
   http_router_id = yandex_alb_http_router.my_http_router.id
@@ -150,7 +150,7 @@ resource "yandex_alb_virtual_host" "my_virtual_host" {
   }
 }
 
-// load balancer
+# load balancer
 resource "yandex_alb_load_balancer" "my_load_balancer" {
   name       = "my-load-balancer"
   network_id = yandex_vpc_network.my_vpc.id
