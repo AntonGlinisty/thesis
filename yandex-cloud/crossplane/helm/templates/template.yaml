@@ -15,7 +15,7 @@ metadata:
 spec:
   forProvider:
     name: my-frontend-subnet
-    zone: ru-central1-a
+    zone: {{ $.Values.zone }}
     networkIdRef:
       name: my-vpc
     v4CidrBlocks:
@@ -30,7 +30,7 @@ metadata:
 spec:
   forProvider:
     name: my-backend-subnet
-    zone: ru-central1-a
+    zone: {{ $.Values.zone }}
     networkIdRef:
       name: my-vpc
     v4CidrBlocks:
@@ -46,7 +46,7 @@ spec:
   forProvider:
     name: my-frontend-vm
     platformId: {{ $.Values.platformId }}
-    zone: ru-central1-a
+    zone: {{ $.Values.zone }}
     resources:
       - cores: 2
         memory: 2
@@ -91,7 +91,7 @@ metadata:
 spec:
   forProvider:
     name: my-db-vm
-    zone: ru-central1-a
+    zone: {{ $.Values.zone }}
     platformId: {{ $.Values.platformId }}
     resources:
       - cores: 2
@@ -182,7 +182,7 @@ spec:
       name: my-vpc
     allocationPolicy:
       - location:
-          - zoneId: ru-central1-a
+          - zoneId: {{ $.Values.zone }}
             subnetIdRef:
               name: my-backend-subnet
     listener:
