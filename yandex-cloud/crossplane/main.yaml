@@ -48,7 +48,7 @@ spec:
         memory: 2
     bootDisk:
       - initializeParams:
-        - imageId: fd85u0rct32prepgjlv0
+          - imageId: fd85u0rct32prepgjlv0
     networkInterface:
       - subnetIdRef:
           name: my-frontend-subnet
@@ -70,7 +70,7 @@ spec:
         memory: 2
     bootDisk:
       - initializeParams:
-        - imageId: fd85u0rct32prepgjlv0
+          - imageId: fd85u0rct32prepgjlv0
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
@@ -91,7 +91,7 @@ spec:
         memory: 2
     bootDisk:
       - initializeParams:
-        - imageId: fd85u0rct32prepgjlv0
+          - imageId: fd85u0rct32prepgjlv0
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
@@ -112,7 +112,7 @@ spec:
         memory: 2
     bootDisk:
       - initializeParams:
-        - imageId: fd85u0rct32prepgjlv0
+          - imageId: fd85u0rct32prepgjlv0
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
@@ -133,7 +133,7 @@ spec:
         memory: 2
     bootDisk:
       - initializeParams:
-        - imageId: fd85u0rct32prepgjlv0
+          - imageId: fd85u0rct32prepgjlv0
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
@@ -148,15 +148,15 @@ spec:
   forProvider:
     name: my-target-group
     target:
-    - ipAddress: 10.10.2.4
-      subnetIdRef:
-        name: my-backend-subnet 
-    - ipAddress: 10.10.2.17
-      subnetIdRef:
-        name: my-backend-subnet 
-    - ipAddress: 10.10.2.12
-      subnetIdRef:
-        name: my-backend-subnet 
+      - ipAddress: 10.10.2.4
+        subnetIdRef:
+          name: my-backend-subnet
+      - ipAddress: 10.10.2.17
+        subnetIdRef:
+          name: my-backend-subnet
+      - ipAddress: 10.10.2.12
+        subnetIdRef:
+          name: my-backend-subnet
   providerConfigRef:
     name: default
 ---
@@ -168,17 +168,17 @@ spec:
   forProvider:
     name: my-backend-group
     httpBackend:
-    - name: my-http-backend
-      port: 8080
-      targetGroupIds:
-        - ds7hhcvet28q026tve30
-      healthcheck:
-      - httpHealthcheck:
-        - path: /
-        timeout: 1s
-        interval: 1s
-        healthyThreshold: 1
-        unhealthyThreshold: 3
+      - name: my-http-backend
+        port: 8080
+        targetGroupIds:
+          - ds7hhcvet28q026tve30
+        healthcheck:
+          - httpHealthcheck:
+              - path: /
+            timeout: 1s
+            interval: 1s
+            healthyThreshold: 1
+            unhealthyThreshold: 3
   providerConfigRef:
     name: yc-provider
 ---
@@ -204,9 +204,9 @@ spec:
     route:
       - name: my-route
         httpRoute:
-        - httpRouteAction:
-          - backendGroupIdRef:
-              name: my-backend-group
+          - httpRouteAction:
+              - backendGroupIdRef:
+                  name: my-backend-group
   providerConfigRef:
     name: yc-provider
 ---
@@ -220,22 +220,21 @@ spec:
     networkIdRef:
       name: my-vpc
     allocationPolicy:
-    - location:
-      - zoneId: ru-central1-a
-        subnetIdRef:
-          name: my-backend-subnet
+      - location:
+          - zoneId: ru-central1-a
+            subnetIdRef:
+              name: my-backend-subnet
     listener:
-    - name: my-listener
-      endpoint:
-      - address:
-        - externalIpv4Address:
-          - {}
-        ports:
-        - 8080
-      http:
-      - handler:
-        - httpRouterIdRef:
-            name: my-http-router
-      name: my-listener
+      - name: my-listener
+        endpoint:
+          - address:
+              - externalIpv4Address:
+                  - {}
+            ports:
+              - 8080
+        http:
+          - handler:
+              - httpRouterIdRef:
+                  name: my-http-router
   providerConfigRef:
     name: yc-provider
