@@ -1,5 +1,3 @@
-"""A Python Pulumi program"""
-
 import pulumi
 import pulumi_yandex as yc
 
@@ -34,24 +32,21 @@ my_frontend_vm = yc.ComputeInstance(
     "my-frontend-vm",
     name="my-frontend-vm",
     zone=zone,
-
     resources=yc.ComputeInstanceResourcesArgs(
         cores=2,
         memory=2,
     ),
-
     boot_disk=yc.ComputeInstanceBootDiskArgs(
         initialize_params=yc.ComputeInstanceBootDiskInitializeParamsArgs(
             image_id=vm_image_id,
         ),
     ),
-
     network_interfaces=[
         yc.ComputeInstanceNetworkInterfaceArgs(
             subnet_id=my_frontend_subnet.id,
             nat=True,
         ),
-    ]
+    ],
 )
 
 # backend vms
@@ -61,18 +56,15 @@ for i in range(3):
         f"my-backend-vm-{i}",
         name=f"my-backend-vm-{i}",
         zone=zone,
-
         resources=yc.ComputeInstanceResourcesArgs(
             cores=2,
             memory=2,
         ),
-
         boot_disk=yc.ComputeInstanceBootDiskArgs(
             initialize_params=yc.ComputeInstanceBootDiskInitializeParamsArgs(
                 image_id=vm_image_id,
             ),
         ),
-
         network_interfaces=[
             yc.ComputeInstanceNetworkInterfaceArgs(
                 subnet_id=my_backend_subnet.id,
@@ -87,24 +79,21 @@ my_frontend_vm = yc.ComputeInstance(
     "my-db-vm",
     name="my-db-vm",
     zone=zone,
-
     resources=yc.ComputeInstanceResourcesArgs(
         cores=2,
         memory=2,
     ),
-
     boot_disk=yc.ComputeInstanceBootDiskArgs(
         initialize_params=yc.ComputeInstanceBootDiskInitializeParamsArgs(
             image_id=vm_image_id,
         ),
     ),
-
     network_interfaces=[
         yc.ComputeInstanceNetworkInterfaceArgs(
             subnet_id=my_backend_subnet.id,
             nat=False,
         ),
-    ]
+    ],
 )
 
 # target group
@@ -114,9 +103,10 @@ my_target_group = yc.AlbTargetGroup(
     targets=[
         yc.AlbTargetGroupTargetArgs(
             subnet_id=my_backend_subnet.id,
-            ip_address=vm.network_interfaces[0].ip_address
-        ) for vm in backend_vms
-    ]
+            ip_address=vm.network_interfaces[0].ip_address,
+        )
+        for vm in backend_vms
+    ],
 )
 
 # backend group
@@ -128,7 +118,6 @@ my_backend_group = yc.AlbBackendGroup(
             name="my-http-backend",
             port=port,
             target_group_ids=[my_target_group.id],
-
             healthcheck=yc.AlbBackendGroupHttpBackendHealthcheckArgs(
                 timeout="1s",
                 interval="1s",
@@ -136,10 +125,10 @@ my_backend_group = yc.AlbBackendGroup(
                 unhealthy_threshold=3,
                 http_healthcheck=yc.AlbBackendGroupHttpBackendHealthcheckHttpHealthcheckArgs(
                     path="/ping"
-                )
-            )
+                ),
+            ),
         )
-    ]
+    ],
 )
 
 # http router
@@ -150,7 +139,6 @@ my_virtual_host = yc.AlbVirtualHost(
     "my-virtual-host",
     name="my-virtual-host",
     http_router_id=my_http_router.id,
-
     routes=[
         yc.AlbVirtualHostRouteArgs(
             name="my-route",
@@ -158,9 +146,9 @@ my_virtual_host = yc.AlbVirtualHost(
                 http_route_action=yc.AlbVirtualHostRouteHttpRouteHttpRouteActionArgs(
                     backend_group_id=my_backend_group.id
                 )
-            )
+            ),
         )
-    ]
+    ],
 )
 
 # load balancer
@@ -168,7 +156,6 @@ my_load_balancer = yc.AlbLoadBalancer(
     "my-load-balancer",
     name="my-load-balancer",
     network_id=my_vpc.id,
-
     allocation_policy=yc.AlbLoadBalancerAllocationPolicyArgs(
         locations=[
             yc.AlbLoadBalancerAllocationPolicyLocationArgs(
@@ -177,7 +164,6 @@ my_load_balancer = yc.AlbLoadBalancer(
             )
         ]
     ),
-
     listeners=[
         yc.AlbLoadBalancerListenerArgs(
             name="my-listener",
@@ -188,15 +174,14 @@ my_load_balancer = yc.AlbLoadBalancer(
                             external_ipv4_address={}
                         )
                     ],
-                    ports=[port]
+                    ports=[port],
                 )
             ],
             http=yc.AlbLoadBalancerListenerHttpArgs(
                 handler=yc.AlbLoadBalancerListenerHttpHandlerArgs(
                     http_router_id=my_http_router.id
                 )
-            )
+            ),
         )
-    ]
+    ],
 )
-
