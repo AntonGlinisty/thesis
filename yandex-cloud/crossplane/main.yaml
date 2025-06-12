@@ -1,39 +1,39 @@
-apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: Network
+---
+# Source: my-crossplane/templates/template.yaml
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: BackendGroup
 metadata:
-  name: my-vpc
+  name: my-backend-group
 spec:
   forProvider:
-    name: my-vpc
+    name: my-backend-group
+    httpBackend:
+      - name: my-http-backend
+        port: 8080
+        targetGroupIds:
+          - ds7nn185djhh10n7mjen
+        healthcheck:
+          - httpHealthcheck:
+              - path: /
+            timeout: 1s
+            interval: 1s
+            healthyThreshold: 1
+            unhealthyThreshold: 3
   providerConfigRef:
     name: yc-provider
 ---
-apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: Subnet
+# Source: my-crossplane/templates/template.yaml
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: HTTPRouter
 metadata:
-  name: my-frontend-subnet
+  name: my-http-router
 spec:
   forProvider:
-    name: my-frontend-subnet
-    zone: ru-central1-a
-    networkIdRef:
-      name: my-vpc
-    v4CidrBlocks:
-      - 10.10.1.0/24
+    name: my-http-router
+  providerConfigRef:
+    name: yc-provider
 ---
-apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: Subnet
-metadata:
-  name: my-backend-subnet
-spec:
-  forProvider:
-    name: my-backend-subnet
-    zone: ru-central1-a
-    networkIdRef:
-      name: my-vpc
-    v4CidrBlocks:
-      - 10.10.2.0/24
----
+# Source: my-crossplane/templates/template.yaml
 apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
 kind: Instance
 metadata:
@@ -56,6 +56,7 @@ spec:
   providerConfigRef:
     name: yc-provider
 ---
+# Source: my-crossplane/templates/template.yaml
 apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
 kind: Instance
 metadata:
@@ -63,8 +64,8 @@ metadata:
 spec:
   forProvider:
     name: my-backend-vm-1
-    zone: ru-central1-a
     platformId: standard-v2
+    zone: ru-central1-a
     resources:
       - cores: 2
         memory: 2
@@ -74,9 +75,11 @@ spec:
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
+        ipAddress: 10.10.2.10
   providerConfigRef:
     name: yc-provider
 ---
+# Source: my-crossplane/templates/template.yaml
 apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
 kind: Instance
 metadata:
@@ -84,8 +87,8 @@ metadata:
 spec:
   forProvider:
     name: my-backend-vm-2
-    zone: ru-central1-a
     platformId: standard-v2
+    zone: ru-central1-a
     resources:
       - cores: 2
         memory: 2
@@ -95,9 +98,11 @@ spec:
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
+        ipAddress: 10.10.2.11
   providerConfigRef:
     name: yc-provider
 ---
+# Source: my-crossplane/templates/template.yaml
 apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
 kind: Instance
 metadata:
@@ -105,8 +110,8 @@ metadata:
 spec:
   forProvider:
     name: my-backend-vm-3
-    zone: ru-central1-a
     platformId: standard-v2
+    zone: ru-central1-a
     resources:
       - cores: 2
         memory: 2
@@ -116,9 +121,11 @@ spec:
     networkInterface:
       - subnetIdRef:
           name: my-backend-subnet
+        ipAddress: 10.10.2.12
   providerConfigRef:
     name: yc-provider
 ---
+# Source: my-crossplane/templates/template.yaml
 apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
 kind: Instance
 metadata:
@@ -140,76 +147,7 @@ spec:
   providerConfigRef:
     name: yc-provider
 ---
-apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: TargetGroup
-metadata:
-  name: my-target-group
-spec:
-  forProvider:
-    name: my-target-group
-    target:
-      - ipAddress: 10.10.2.4
-        subnetIdRef:
-          name: my-backend-subnet
-      - ipAddress: 10.10.2.17
-        subnetIdRef:
-          name: my-backend-subnet
-      - ipAddress: 10.10.2.12
-        subnetIdRef:
-          name: my-backend-subnet
-  providerConfigRef:
-    name: default
----
-apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: BackendGroup
-metadata:
-  name: my-backend-group
-spec:
-  forProvider:
-    name: my-backend-group
-    httpBackend:
-      - name: my-http-backend
-        port: 8080
-        targetGroupIds:
-          - ds7hhcvet28q026tve30
-        healthcheck:
-          - httpHealthcheck:
-              - path: /
-            timeout: 1s
-            interval: 1s
-            healthyThreshold: 1
-            unhealthyThreshold: 3
-  providerConfigRef:
-    name: yc-provider
----
-apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: HTTPRouter
-metadata:
-  name: my-http-router
-spec:
-  forProvider:
-    name: my-http-router
-  providerConfigRef:
-    name: yc-provider
----
-apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
-kind: VirtualHost
-metadata:
-  name: my-virtual-host
-spec:
-  forProvider:
-    name: my-virtual-host
-    httpRouterIdRef:
-      name: my-http-router
-    route:
-      - name: my-route
-        httpRoute:
-          - httpRouteAction:
-              - backendGroupIdRef:
-                  name: my-backend-group
-  providerConfigRef:
-    name: yc-provider
----
+# Source: my-crossplane/templates/template.yaml
 apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
 kind: LoadBalancer
 metadata:
@@ -236,5 +174,79 @@ spec:
           - handler:
               - httpRouterIdRef:
                   name: my-http-router
+  providerConfigRef:
+    name: yc-provider
+---
+# Source: my-crossplane/templates/template.yaml
+apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: my-vpc
+spec:
+  forProvider:
+    name: my-vpc
+  providerConfigRef:
+    name: yc-provider
+---
+# Source: my-crossplane/templates/template.yaml
+apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  name: my-frontend-subnet
+spec:
+  forProvider:
+    name: my-frontend-subnet
+    zone: ru-central1-a
+    networkIdRef:
+      name: my-vpc
+    v4CidrBlocks:
+      - 10.10.1.0/24
+  providerConfigRef:
+    name: yc-provider
+---
+# Source: my-crossplane/templates/template.yaml
+apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  name: my-backend-subnet
+spec:
+  forProvider:
+    name: my-backend-subnet
+    zone: ru-central1-a
+    networkIdRef:
+      name: my-vpc
+    v4CidrBlocks:
+      - 10.10.2.0/24
+  providerConfigRef:
+    name: yc-provider
+---
+# Source: my-crossplane/templates/template.yaml
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: TargetGroup
+metadata:
+  name: my-target-group
+spec:
+  forProvider:
+    name: my-target-group
+    target:
+  providerConfigRef:
+    name: yc-provider
+---
+# Source: my-crossplane/templates/template.yaml
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: VirtualHost
+metadata:
+  name: my-virtual-host
+spec:
+  forProvider:
+    name: my-virtual-host
+    httpRouterIdRef:
+      name: my-http-router
+    route:
+      - name: my-route
+        httpRoute:
+          - httpRouteAction:
+              - backendGroupIdRef:
+                  name: my-backend-group
   providerConfigRef:
     name: yc-provider

@@ -1,0 +1,201 @@
+apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Network
+metadata:
+  name: my-vpc
+spec:
+  forProvider:
+    name: my-vpc
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  name: my-frontend-subnet
+spec:
+  forProvider:
+    name: my-frontend-subnet
+    zone: ru-central1-a
+    networkIdRef:
+      name: my-vpc
+    v4CidrBlocks:
+      - 10.10.1.0/24
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: vpc.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  name: my-backend-subnet
+spec:
+  forProvider:
+    name: my-backend-subnet
+    zone: ru-central1-a
+    networkIdRef:
+      name: my-vpc
+    v4CidrBlocks:
+      - 10.10.2.0/24
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: my-frontend-vm
+spec:
+  forProvider:
+    name: my-frontend-vm
+    platformId: {{ $.Values.platformId }}
+    zone: ru-central1-a
+    resources:
+      - cores: 2
+        memory: 2
+    bootDisk:
+      - initializeParams:
+          - imageId: {{ $.Values.imageId }}
+    networkInterface:
+      - subnetIdRef:
+          name: my-frontend-subnet
+        nat: true
+  providerConfigRef:
+    name: yc-provider
+{{- range .Values.instances }}
+---
+apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: {{ .name }}
+spec:
+  forProvider:
+    name: {{ .name }}
+    platformId: {{ $.Values.platformId }}
+    zone: {{ $.Values.zone }}
+    resources:
+      - cores: 2
+        memory: 2
+    bootDisk:
+      - initializeParams:
+          - imageId: {{ $.Values.imageId }}
+    networkInterface:
+      - subnetIdRef:
+          name: my-backend-subnet
+        ipAddress: {{ .ip }}
+  providerConfigRef:
+    name: yc-provider
+{{- end }}
+---
+apiVersion: compute.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: my-db-vm
+spec:
+  forProvider:
+    name: my-db-vm
+    zone: ru-central1-a
+    platformId: {{ $.Values.platformId }}
+    resources:
+      - cores: 2
+        memory: 2
+    bootDisk:
+      - initializeParams:
+          - imageId: {{ $.Values.imageId }}
+    networkInterface:
+      - subnetIdRef:
+          name: my-backend-subnet
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: TargetGroup
+metadata:
+  name: my-target-group
+spec:
+  forProvider:
+    name: my-target-group
+    target:
+{{- range .Values.targets }}
+      - ipAddress: {{ .ip }}
+        subnetIdRef:
+          name: my-backend-subnet
+{{- end }}
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: BackendGroup
+metadata:
+  name: my-backend-group
+spec:
+  forProvider:
+    name: my-backend-group
+    httpBackend:
+      - name: my-http-backend
+        port: {{ $.Values.port }}
+        targetGroupIds:
+          - ds7nn185djhh10n7mjen
+        healthcheck:
+          - httpHealthcheck:
+              - path: /
+            timeout: 1s
+            interval: 1s
+            healthyThreshold: 1
+            unhealthyThreshold: 3
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: HTTPRouter
+metadata:
+  name: my-http-router
+spec:
+  forProvider:
+    name: my-http-router
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: VirtualHost
+metadata:
+  name: my-virtual-host
+spec:
+  forProvider:
+    name: my-virtual-host
+    httpRouterIdRef:
+      name: my-http-router
+    route:
+      - name: my-route
+        httpRoute:
+          - httpRouteAction:
+              - backendGroupIdRef:
+                  name: my-backend-group
+  providerConfigRef:
+    name: yc-provider
+---
+apiVersion: alb.yandex-cloud.jet.crossplane.io/v1alpha1
+kind: LoadBalancer
+metadata:
+  name: my-load-balancer
+spec:
+  forProvider:
+    name: my-load-balancer
+    networkIdRef:
+      name: my-vpc
+    allocationPolicy:
+      - location:
+          - zoneId: ru-central1-a
+            subnetIdRef:
+              name: my-backend-subnet
+    listener:
+      - name: my-listener
+        endpoint:
+          - address:
+              - externalIpv4Address:
+                  - {}
+            ports:
+              - {{ $.Values.port }}
+        http:
+          - handler:
+              - httpRouterIdRef:
+                  name: my-http-router
+  providerConfigRef:
+    name: yc-provider

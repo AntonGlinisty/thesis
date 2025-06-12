@@ -1,0 +1,12 @@
+instances:
+  - name: my-backend-vm-1
+    ip: 10.10.2.10
+  - name: my-backend-vm-2
+    ip: 10.10.2.11
+  - name: my-backend-vm-3
+    ip: 10.10.2.12
+
+zone: ru-central1-a
+platformId: standard-v2
+imageId: fd85u0rct32prepgjlv0
+port: 8080
